@@ -1,0 +1,16 @@
+# Build artifacts & hot-reload backups
+*.exe
+*.dll
+*.pdb
+*.tmp
+*.log
+CodexDesktopTuning.prev.*
+
+# IDE / OS
+.vs/
+.vscode/
+bin/
+obj/
+Thumbs.db
+Desktop.ini
+.DS_Store

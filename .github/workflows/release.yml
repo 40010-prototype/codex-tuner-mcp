@@ -1,0 +1,51 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compile CodexDesktopTuning.exe (.NET Framework 4.8 csc.exe)
+        shell: pwsh
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
+          Test-Path .\CodexDesktopTuning.exe
+
+      - name: Smoke test CLI & generate SHA256
+        shell: pwsh
+        run: |
+          .\CodexDesktopTuning.exe --help
+          .\CodexDesktopTuning.exe capabilities --pretty
+          $hash = (Get-FileHash .\CodexDesktopTuning.exe -Algorithm SHA256).Hash
+          "$hash  CodexDesktopTuning.exe" | Set-Content -Path .\CodexDesktopTuning.exe.sha256 -Encoding ASCII
+          Get-Content .\CodexDesktopTuning.exe.sha256
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CodexDesktopTuning-win-x64
+          path: |
+            CodexDesktopTuning.exe
+            CodexDesktopTuning.exe.sha256
+
+      - name: Publish GitHub Release on version tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            CodexDesktopTuning.exe
+            CodexDesktopTuning.exe.sha256
